@@ -32,13 +32,15 @@ router.get('/', async (req, res) => {
 
     if (error) throw error;
 
-    // 处理图片URL
-    const result = records.map(record => ({
-      ...record,
-      imageUrl: record.type === 'image' && record.content
-        ? `/uploads/${record.content}`
-        : null
-    }));
+    const result = records.map(record => {
+      let imageUrl = null;
+      if (record.type === 'image' && record.content) {
+        imageUrl = /^https?:\/\//i.test(record.content)
+          ? record.content
+          : `/uploads/${record.content}`;
+      }
+      return { ...record, imageUrl };
+    });
 
     res.json({ code: 200, data: result });
   } catch (error) {

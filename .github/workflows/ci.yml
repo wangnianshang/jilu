@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: Lint if present
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts&&p.scripts.lint?0:1)"; then
+            npm run lint
+          else
+            echo 'No lint script'
+          fi
+      - name: Test if present
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts&&p.scripts.test?0:1)"; then
+            npm test
+          else
+            echo 'No test script'
+          fi
+      - name: Build if present
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts&&p.scripts.build?0:1)"; then
+            npm run build
+          else
+            echo 'No build script'
+          fi
