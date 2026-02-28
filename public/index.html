@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数字记录助手</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- 顶部 -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">📊</div>
+        <h1>数字记录</h1>
+      </div>
+      <div class="header-right">
+        <div class="stat-badge">
+          <span class="stat-label">总计</span>
+          <span class="stat-value" id="totalCount">0</span>
+        </div>
+        <div class="stat-badge today">
+          <span class="stat-label">今日</span>
+          <span class="stat-value" id="todayCount">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- 录入卡片 -->
+      <div class="card input-card">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="text">
+            <span>✏️</span> 文字录入
+          </button>
+          <button class="tab-btn" data-tab="voice">
+            <span>🎤</span> 语音录入
+          </button>
+          <button class="tab-btn" data-tab="image">
+            <span>🖼️</span> 图片上传
+          </button>
+        </div>
+
+        <!-- 文字录入 -->
+        <div class="tab-content active" id="textForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label>数字内容</label>
+              <input type="text" id="textContent" placeholder="输入数字信息...">
+            </div>
+            <div class="form-group">
+              <label>附加说明</label>
+              <input type="text" id="textDesc" placeholder="备注信息（可选）">
+            </div>
+          </div>
+          <button class="btn-submit" onclick="submitText()">
+            <span>➕</span> 提交记录
+          </button>
+        </div>
+
+        <!-- 语音录入 -->
+        <div class="tab-content" id="voiceForm">
+          <div class="voice-area">
+            <button class="voice-btn" id="voiceBtn"
+              onmousedown="startRecording(event)"
+              onmouseup="stopRecording(event)"
+              onmouseleave="stopRecording(event)"
+              ontouchstart="handleTouchStart(event)"
+              ontouchend="handleTouchEnd(event)">
+              🎤
+            </button>
+            <div class="voice-status" id="voiceStatus">按住说话，松开自动识别</div>
+            <div class="voice-result" id="voiceResult">
+              <span class="placeholder">识别结果将显示在这里</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>附加说明</label>
+            <input type="text" id="voiceDesc" placeholder="备注信息（可选）">
+          </div>
+          <button class="btn-submit" onclick="submitVoice()">
+            <span>➕</span> 提交记录
+          </button>
+        </div>
+
+        <!-- 图片上传 -->
+        <div class="tab-content" id="imageForm">
+          <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageFile').click()">
+            <input type="file" id="imageFile" accept="image/*" onchange="previewImage()" hidden>
+            <div class="preview-box" id="previewBox">
+              <img id="previewImg" src="" alt="预览">
+              <span class="change-img">点击更换</span>
+            </div>
+            <div class="upload-hint" id="uploadHint">
+              <span class="upload-icon">📁</span>
+              <span>点击上传图片</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>附加说明</label>
+            <input type="text" id="imageDesc" placeholder="备注信息（可选）">
+          </div>
+          <button class="btn-submit" onclick="submitImage()">
+            <span>⬆️</span> 上传图片
+          </button>
+        </div>
+      </div>
+
+      <!-- 查询卡片 -->
+      <div class="card query-card">
+        <div class="query-row">
+          <div class="query-group">
+            <label>🔍 日期筛选</label>
+            <div class="query-input">
+              <input type="date" id="dateFilter">
+              <button class="btn-query" onclick="filterByDate()">查询</button>
+            </div>
+          </div>
+          <div class="query-group">
+            <label>🔎 关键词搜索</label>
+            <div class="query-input">
+              <input type="text" id="keywordSearch" placeholder="输入关键词..." onkeypress="if(event.key==='Enter')searchByKeyword()">
+              <button class="btn-query" onclick="searchByKeyword()">搜索</button>
+            </div>
+          </div>
+          <button class="btn-reset" onclick="loadRecords()">显示全部</button>
+        </div>
+      </div>
+
+      <!-- 记录列表 -->
+      <div class="card records-card">
+        <div class="card-header">
+          <h2>📋 记录列表</h2>
+          <span class="record-count" id="recordCount">0 条</span>
+        </div>
+        <div class="records-list" id="recordsList">
+          <div class="empty-state">
+            <span class="empty-icon">📭</span>
+            <p>暂无记录</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 图片预览弹窗 -->
+  <div class="modal" id="imageModal" onclick="closeModal()">
+    <span class="modal-close">&times;</span>
+    <img class="modal-img" id="modalImg">
+  </div>
+
+  <!-- 删除确认弹窗 -->
+  <div class="confirm-modal" id="confirmModal">
+    <div class="confirm-dialog">
+      <div class="confirm-icon">⚠️</div>
+      <div class="confirm-title">确认删除</div>
+      <div class="confirm-text">是否永久删除此记录？</div>
+      <div class="confirm-btns">
+        <button class="btn-cancel" onclick="closeConfirm()">取消</button>
+        <button class="btn-confirm" id="confirmDeleteBtn">确认删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 提示弹窗 -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API_BASE = '';
+    let deleteId = null;
+
+    // 语音识别变量
+    let recognition = null;
+    let isRecording = false;
+    let mediaStream = null;
+
+    // 页面加载
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStats();
+      loadRecords();
+      initVoice();
+    });
+
+    // Tab切换
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab + 'Form').classList.add('active');
+      });
+    });
+
+    // 初始化语音识别
+    function initVoice() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        document.getElementById('voiceStatus').textContent = '您的浏览器不支持语音识别';
+        document.getElementById('voiceBtn').disabled = true;
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'zh-CN';
+
+      recognition.onstart = () => {
+        isRecording = true;
+        document.getElementById('voiceBtn').classList.add('recording');
+        document.getElementById('voiceStatus').classList.add('recording');
+        document.getElementById('voiceStatus').textContent = '正在录音识别...';
+      };
+
+      recognition.onend = () => {
+        isRecording = false;
+        document.getElementById('voiceBtn').classList.remove('recording');
+        document.getElementById('voiceStatus').classList.remove('recording');
+        document.getElementById('voiceStatus').textContent = '按住说话，松开自动识别';
+      };
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          const resultDiv = document.getElementById('voiceResult');
+          resultDiv.innerHTML = `<span class="result-text">${escapeHtml(finalTranscript)}</span><span class="edit-hint">（可点击修改）</span>`;
+          resultDiv.onclick = () => {
+            const text = resultDiv.querySelector('.result-text');
+            if (text) {
+              const newText = prompt('请修改识别结果:', text.textContent);
+              if (newText !== null) {
+                resultDiv.innerHTML = `<span class="result-text">${escapeHtml(newText)}</span><span class="edit-hint">（可点击修改）</span>`;
+              }
+            }
+          };
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error('语音识别错误:', event.error);
+        document.getElementById('voiceStatus').textContent = '识别出错，请重试';
+        isRecording = false;
+        document.getElementById('voiceBtn').classList.remove('recording');
+      };
+    }
+
+    // 开始录音识别
+    async function startRecording(e) {
+      if (e) e.preventDefault();
+      if (!recognition) {
+        showToast('您的浏览器不支持语音识别，建议使用Chrome/Edge', 'error');
+        return;
+      }
+
+      // 清空上次结果
+      document.getElementById('voiceResult').innerHTML = '<span class="placeholder">识别结果将显示在这里</span>';
+      document.getElementById('voiceStatus').textContent = '正在录音识别...';
+
+      try {
+        // 先请求麦克风权限
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(track => track.stop()); // 获得权限后关闭
+        }
+        recognition.start();
+      } catch (err) {
+        console.error('麦克风权限或启动错误:', err);
+        if (err.name === 'NotAllowedError') {
+          showToast('请允许使用麦克风权限', 'error');
+        } else if (err.name === 'NotFoundError') {
+          showToast('未找到麦克风设备', 'error');
+        } else {
+          // 如果已经在运行，先停止再重启
+          recognition.stop();
+          setTimeout(() => {
+            try {
+              recognition.start();
+            } catch (e2) {
+              showToast('启动失败，请重试', 'error');
+            }
+          }, 100);
+        }
+      }
+    }
+
+    // 停止录音
+    function stopRecording(e) {
+      if (e) e.preventDefault();
+      if (recognition && isRecording) {
+        recognition.stop();
+      }
+    }
+
+    // 触摸事件处理（手机端）
+    let touchTimer = null;
+    function handleTouchStart(e) {
+      e.preventDefault();
+      startRecording(e);
+    }
+
+    function handleTouchEnd(e) {
+      e.preventDefault();
+      stopRecording(e);
+    }
+
+    // 提示消息
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = 'toast ' + type;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // 获取统计
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API_BASE}/api/records/stats`);
+        const data = await res.json();
+        if (data.code === 200) {
+          document.getElementById('totalCount').textContent = data.data.total;
+          document.getElementById('todayCount').textContent = data.data.today;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 加载记录
+    async function loadRecords() {
+      try {
+        const res = await fetch(`${API_BASE}/api/records`);
+        const data = await res.json();
+        if (data.code === 200) {
+          renderRecords(data.data);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 渲染记录
+    function renderRecords(records) {
+      const container = document.getElementById('recordsList');
+      document.getElementById('recordCount').textContent = (records?.length || 0) + ' 条';
+
+      if (!records || records.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <span class="empty-icon">📭</span>
+            <p>暂无记录</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = records.map(record => {
+        const time = new Date(record.timestamp).toLocaleString('zh-CN');
+        const typeLabel = record.type === 'text' ? '文字' : (record.type === 'voice' ? '语音' : '图片');
+        const content = record.type === 'text' || record.type === 'voice'
+          ? `<div class="record-value">${escapeHtml(record.content)}</div>`
+          : `<div class="record-img"><img src="${record.imageUrl}" alt="图片"></div>`;
+
+        return `
+          <div class="record-item">
+            <div class="record-info">
+              <span class="record-type ${record.type}">${typeLabel}</span>
+              <span class="record-time">${time}</span>
+            </div>
+            ${content}
+            ${record.description ? `<div class="record-desc">${escapeHtml(record.description)}</div>` : ''}
+            <button class="btn-del" onclick="confirmDelete(${record.id})">🗑️</button>
+          </div>`;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 提交文字
+    async function submitText() {
+      const content = document.getElementById('textContent').value.trim();
+      const description = document.getElementById('textDesc').value.trim();
+      if (!content) return showToast('请输入数字内容', 'error');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/records`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'text', content, description })
+        });
+        const data = await res.json();
+        if (data.code === 200) {
+          showToast('提交成功 ✓');
+          document.getElementById('textContent').value = '';
+          document.getElementById('textDesc').value = '';
+          loadRecords();
+          loadStats();
+        }
+      } catch (e) {
+        showToast('提交失败', 'error');
+      }
+    }
+
+    // 提交语音
+    async function submitVoice() {
+      const resultDiv = document.getElementById('voiceResult');
+      const contentSpan = resultDiv.querySelector('.result-text');
+      const content = contentSpan ? contentSpan.textContent.trim() : '';
+      const description = document.getElementById('voiceDesc').value.trim();
+
+      if (!content) return showToast('请先语音输入内容', 'error');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/records`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'voice', content, description })
+        });
+        const data = await res.json();
+        if (data.code === 200) {
+          showToast('提交成功 ✓');
+          document.getElementById('voiceResult').innerHTML = '<span class="placeholder">识别结果将显示在这里</span>';
+          document.getElementById('voiceDesc').value = '';
+          loadRecords();
+          loadStats();
+        }
+      } catch (e) {
+        showToast('提交失败', 'error');
+      }
+    }
+
+    // 图片预览
+    function previewImage() {
+      const file = document.getElementById('imageFile').files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          document.getElementById('previewImg').src = e.target.result;
+          document.getElementById('previewBox').style.display = 'block';
+          document.getElementById('uploadHint').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // 提交图片
+    async function submitImage() {
+      const file = document.getElementById('imageFile').files[0];
+      const description = document.getElementById('imageDesc').value.trim();
+      if (!file) return showToast('请选择图片', 'error');
+
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
+        const uploadData = await uploadRes.json();
+        if (uploadData.code !== 200) return showToast('上传失败', 'error');
+
+        const recordRes = await fetch(`${API_BASE}/api/records`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'image', content: uploadData.data.filename, description })
+        });
+        const recordData = await recordRes.json();
+        if (recordData.code === 200) {
+          showToast('上传成功 ✓');
+          document.getElementById('imageFile').value = '';
+          document.getElementById('imageDesc').value = '';
+          document.getElementById('previewBox').style.display = 'none';
+          document.getElementById('uploadHint').style.display = 'flex';
+          loadRecords();
+          loadStats();
+        }
+      } catch (e) {
+        showToast('上传失败', 'error');
+      }
+    }
+
+    // 日期筛选
+    async function filterByDate() {
+      const date = document.getElementById('dateFilter').value;
+      if (!date) return showToast('请选择日期', 'error');
+      try {
+        const res = await fetch(`${API_BASE}/api/records?date=${date}`);
+        const data = await res.json();
+        if (data.code === 200) renderRecords(data.data);
+      } catch (e) {
+        showToast('查询失败', 'error');
+      }
+    }
+
+    // 关键词搜索
+    async function searchByKeyword() {
+      const keyword = document.getElementById('keywordSearch').value.trim();
+      if (!keyword) return showToast('请输入关键词', 'error');
+      try {
+        const res = await fetch(`${API_BASE}/api/records?keyword=${encodeURIComponent(keyword)}`);
+        const data = await res.json();
+        if (data.code === 200) renderRecords(data.data);
+      } catch (e) {
+        showToast('搜索失败', 'error');
+      }
+    }
+
+    // 删除确认
+    function confirmDelete(id) {
+      deleteId = id;
+      document.getElementById('confirmModal').classList.add('show');
+    }
+
+    // 关闭确认框
+    function closeConfirm() {
+      document.getElementById('confirmModal').classList.remove('show');
+      deleteId = null;
+    }
+
+    // 确认删除
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+      if (!deleteId) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/records/${deleteId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.code === 200) {
+          showToast('删除成功');
+          loadRecords();
+          loadStats();
+        }
+      } catch (e) {
+        showToast('删除失败', 'error');
+      }
+      closeConfirm();
+    });
+
+    // 查看大图
+    function showImage(src) {
+      document.getElementById('modalImg').src = src;
+      document.getElementById('imageModal').classList.add('show');
+    }
+
+    // 关闭弹窗
+    function closeModal() {
+      document.getElementById('imageModal').classList.remove('show');
+    }
+  </script>
+</body>
+</html>

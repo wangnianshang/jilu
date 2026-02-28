@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start)",
+      "Bash(netstat:*)",
+      "Bash(node src/index.js)",
+      "Bash(taskkill:*)",
+      "Bash(cmd //c:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:fttlzyoxrawnhmdcavnr.supabase.co)"
+    ]
+  }
+}

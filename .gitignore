@@ -1,0 +1,30 @@
+node_modules/
+dist/
+build/
+coverage/
+.nyc_output/
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env and secrets
+.env
+.env.*
+
+# OS/IDE
+.DS_Store
+.vscode/
+.idea/
+
+# App data
+database.db
+public/uploads/
